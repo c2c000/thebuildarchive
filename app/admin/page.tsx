@@ -60,6 +60,8 @@ import {
   EyeOff,
   Mail,
   Loader2,
+  Heart,
+  ExternalLink,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -177,6 +179,14 @@ function AdminContent() {
     addLearningModule,
     updateLearningModule,
     deleteLearningModule,
+    sponsors,
+    addSponsor,
+    updateSponsor,
+    deleteSponsor,
+    thankYous,
+    addThankYou,
+    updateThankYou,
+    deleteThankYou,
     siteContent,
     updateSiteContent,
     resetToDefaults,
@@ -230,6 +240,12 @@ function AdminContent() {
   })
   const [deletingStoryId, setDeletingStoryId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+
+  // Sponsor & Thank You forms
+  const [sponsorForm, setSponsorForm] = useState<{ name: string; description: string; url: string; tier: 'platinum' | 'gold' | 'silver' | 'community' }>({ name: '', description: '', url: '', tier: 'gold' })
+  const [editingSponsorId, setEditingSponsorId] = useState<string | null>(null)
+  const [thankYouForm, setThankYouForm] = useState({ name: '', note: '' })
+  const [editingThankYouId, setEditingThankYouId] = useState<string | null>(null)
 
   useEffect(() => {
     setSiteContentForm(siteContent)
@@ -479,7 +495,7 @@ function AdminContent() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-8 grid w-full grid-cols-5 lg:w-[625px]">
+          <TabsList className="mb-8 grid w-full grid-cols-3 sm:grid-cols-6 lg:w-[750px]">
             <TabsTrigger value="site" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Site Content
@@ -495,6 +511,10 @@ function AdminContent() {
             <TabsTrigger value="modules" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Entry Lab
+            </TabsTrigger>
+            <TabsTrigger value="sponsors" className="flex items-center gap-2">
+              <Heart className="h-4 w-4" />
+              Sponsors
             </TabsTrigger>
             <TabsTrigger value="subscribers" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
