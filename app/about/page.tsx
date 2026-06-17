@@ -176,7 +176,7 @@ export default function AboutPage() {
       </section>
       
 <motion.p
-            className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
+            className="mx-auto max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl mt-12 rounded-2xl border border-border bg-card p-12 text-center"
           >
             Research cited by Nevada STEM leaders found that about 1 in 3 children lose interest in science by fourth grade. Additionally, Nevada reported that only 38% of elementary schools offered dedicated STEM instruction during the school day, highlighting the need for stronger early STEM exposure.
           </motion.p>
