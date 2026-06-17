@@ -67,6 +67,20 @@ export interface DiscussionPost {
   replies: DiscussionReply[]
 }
 
+export interface Sponsor {
+  id: string
+  name: string
+  description: string
+  url: string
+  tier: 'platinum' | 'gold' | 'silver' | 'community'
+}
+
+export interface ThankYou {
+  id: string
+  name: string
+  note: string
+}
+
 // Color scheme presets
 export type ColorScheme = 'default' | 'forest' | 'ocean' | 'sunset' | 'lavender' | 'monochrome'
 
@@ -194,6 +208,11 @@ export interface SiteContent {
   missionLabel: string
   missionSource: string
 
+  // Sponsors & Thank Yous
+  sponsorsTitle: string
+  sponsorsSubtitle: string
+  thankYousTitle: string
+
   // Stay Updated
   stayUpdatedTitle: string
   stayUpdatedDescription: string
@@ -259,7 +278,7 @@ export const defaultSiteContent: SiteContent = {
   colorScheme: 'default',
 
   // Section Order (reflections is placed after themes/stats section)
-  sectionOrder: 'reflections,documentary,stories,careers,entry-lab,dissected',
+  sectionOrder: 'reflections,documentary,stories,careers,entry-lab,dissected,sponsors',
 
   // Hidden Sections
   hiddenSections: '',
@@ -321,6 +340,11 @@ export const defaultSiteContent: SiteContent = {
   missionQuote: 'Engineering shapes the world. We believe the people shaping it should reflect the world—and that starts with who gets to learn in the first place.',
   missionLabel: 'The Project Mission',
   missionSource: 'Who Gets to Build?',
+
+  // Sponsors & Thank Yous
+  sponsorsTitle: 'Sponsors & Supporters',
+  sponsorsSubtitle: 'This work is made possible by the organizations and people who believe in building a more inclusive future for engineering.',
+  thankYousTitle: 'With Gratitude',
 
   // Footer
   footerCta: 'Ready to Start?',
@@ -607,6 +631,10 @@ export const defaultDiscussionPosts: DiscussionPost[] = [
     replies: [],
   },
 ]
+
+export const defaultSponsors: Sponsor[] = []
+
+export const defaultThankYous: ThankYou[] = []
 
 export const defaultLearningModules: LearningModule[] = [
   {

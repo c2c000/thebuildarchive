@@ -8,11 +8,15 @@ import {
   type DiscussionPost,
   type DiscussionReply,
   type SiteContent,
+  type Sponsor,
+  type ThankYou,
   defaultStories,
   defaultDissectedObjects,
   defaultLearningModules,
   defaultDiscussionPosts,
   defaultSiteContent,
+  defaultSponsors,
+  defaultThankYous,
 } from './content-types'
 
 interface ContentContextType {
@@ -40,6 +44,18 @@ interface ContentContextType {
   addReplyToPost: (postId: string, reply: Omit<DiscussionReply, 'id' | 'createdAt'>) => void
   deleteDiscussionPost: (id: string) => void
 
+  // Sponsors
+  sponsors: Sponsor[]
+  addSponsor: (sponsor: Omit<Sponsor, 'id'>) => void
+  updateSponsor: (id: string, sponsor: Partial<Sponsor>) => void
+  deleteSponsor: (id: string) => void
+
+  // Thank Yous
+  thankYous: ThankYou[]
+  addThankYou: (thankYou: Omit<ThankYou, 'id'>) => void
+  updateThankYou: (id: string, thankYou: Partial<ThankYou>) => void
+  deleteThankYou: (id: string) => void
+
   // Site Content
   siteContent: SiteContent
   updateSiteContent: (updates: Partial<SiteContent>) => void
@@ -58,6 +74,8 @@ const STORAGE_KEYS = {
   learningModules: 'wgtb-modules',
   discussionPosts: 'wgtb-discussions',
   siteContent: 'wgtb-site-content',
+  sponsors: 'wgtb-sponsors',
+  thankYous: 'wgtb-thankyous',
 }
 
 function generateId(): string {
@@ -70,6 +88,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [learningModules, setLearningModules] = useState<LearningModule[]>(defaultLearningModules)
   const [discussionPosts, setDiscussionPosts] = useState<DiscussionPost[]>(defaultDiscussionPosts)
   const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent)
+  const [sponsors, setSponsors] = useState<Sponsor[]>(defaultSponsors)
+  const [thankYous, setThankYous] = useState<ThankYou[]>(defaultThankYous)
   const [isHydrated, setIsHydrated] = useState(false)
 
   // Load from localStorage on mount
@@ -120,6 +140,24 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    const loadedSponsors = localStorage.getItem(STORAGE_KEYS.sponsors)
+    if (loadedSponsors) {
+      try {
+        setSponsors(JSON.parse(loadedSponsors))
+      } catch (e) {
+        console.error('Failed to parse sponsors from localStorage')
+      }
+    }
+
+    const loadedThankYous = localStorage.getItem(STORAGE_KEYS.thankYous)
+    if (loadedThankYous) {
+      try {
+        setThankYous(JSON.parse(loadedThankYous))
+      } catch (e) {
+        console.error('Failed to parse thank yous from localStorage')
+      }
+    }
+
     setIsHydrated(true)
   }, [])
 
@@ -153,6 +191,18 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.siteContent, JSON.stringify(siteContent))
     }
   }, [siteContent, isHydrated])
+
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(STORAGE_KEYS.sponsors, JSON.stringify(sponsors))
+    }
+  }, [sponsors, isHydrated])
+
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(STORAGE_KEYS.thankYous, JSON.stringify(thankYous))
+    }
+  }, [thankYous, isHydrated])
 
   // Story CRUD
   const addStory = (story: Omit<Story, 'id'>) => {
@@ -236,6 +286,36 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setDiscussionPosts((prev) => prev.filter((post) => post.id !== id))
   }
 
+  // Sponsor CRUD
+  const addSponsor = (sponsor: Omit<Sponsor, 'id'>) => {
+    setSponsors((prev) => [...prev, { ...sponsor, id: generateId() }])
+  }
+
+  const updateSponsor = (id: string, updates: Partial<Sponsor>) => {
+    setSponsors((prev) =>
+      prev.map((sponsor) => (sponsor.id === id ? { ...sponsor, ...updates } : sponsor))
+    )
+  }
+
+  const deleteSponsor = (id: string) => {
+    setSponsors((prev) => prev.filter((sponsor) => sponsor.id !== id))
+  }
+
+  // Thank You CRUD
+  const addThankYou = (thankYou: Omit<ThankYou, 'id'>) => {
+    setThankYous((prev) => [...prev, { ...thankYou, id: generateId() }])
+  }
+
+  const updateThankYou = (id: string, updates: Partial<ThankYou>) => {
+    setThankYous((prev) =>
+      prev.map((ty) => (ty.id === id ? { ...ty, ...updates } : ty))
+    )
+  }
+
+  const deleteThankYou = (id: string) => {
+    setThankYous((prev) => prev.filter((ty) => ty.id !== id))
+  }
+
   // Site Content
   const updateSiteContent = (updates: Partial<SiteContent>) => {
     setSiteContent((prev) => ({ ...prev, ...updates }))
@@ -248,11 +328,15 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setLearningModules(defaultLearningModules)
     setDiscussionPosts(defaultDiscussionPosts)
     setSiteContent(defaultSiteContent)
+    setSponsors(defaultSponsors)
+    setThankYous(defaultThankYous)
     localStorage.removeItem(STORAGE_KEYS.stories)
     localStorage.removeItem(STORAGE_KEYS.dissectedObjects)
     localStorage.removeItem(STORAGE_KEYS.learningModules)
     localStorage.removeItem(STORAGE_KEYS.discussionPosts)
     localStorage.removeItem(STORAGE_KEYS.siteContent)
+    localStorage.removeItem(STORAGE_KEYS.sponsors)
+    localStorage.removeItem(STORAGE_KEYS.thankYous)
   }
 
   const exportData = () => {
@@ -263,6 +347,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         learningModules,
         discussionPosts,
         siteContent,
+        sponsors,
+        thankYous,
         exportedAt: new Date().toISOString(),
       },
       null,
@@ -287,6 +373,12 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       }
       if (data.siteContent && typeof data.siteContent === 'object') {
         setSiteContent({ ...defaultSiteContent, ...data.siteContent })
+      }
+      if (data.sponsors && Array.isArray(data.sponsors)) {
+        setSponsors(data.sponsors)
+      }
+      if (data.thankYous && Array.isArray(data.thankYous)) {
+        setThankYous(data.thankYous)
       }
       return true
     } catch (e) {
@@ -314,6 +406,14 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         addDiscussionPost,
         addReplyToPost,
         deleteDiscussionPost,
+        sponsors,
+        addSponsor,
+        updateSponsor,
+        deleteSponsor,
+        thankYous,
+        addThankYou,
+        updateThankYou,
+        deleteThankYou,
         siteContent,
         updateSiteContent,
         resetToDefaults,

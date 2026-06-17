@@ -10,6 +10,7 @@ import { StemCareersSection } from '@/components/stem-careers-section'
 import { EntryLabSection } from '@/components/entry-lab-section'
 import { DissectedSection } from '@/components/dissected-section'
 import { ReflectionsSection } from '@/components/reflections-section'
+import { SponsorsSection } from '@/components/sponsors-section'
 import { StayUpdatedSection } from '@/components/stay-updated-section'
 import { Footer } from '@/components/footer'
 import { ScrollToExplore } from '@/components/scroll-to-explore'
@@ -274,7 +275,7 @@ export default function Home() {
       {/* Render sections in order based on siteContent.sectionOrder, excluding hidden ones */}
       {(() => {
         const hiddenSections = (siteContent.hiddenSections || '').split(',').map(s => s.trim()).filter(Boolean)
-        return (siteContent.sectionOrder || 'documentary,stories,careers,entry-lab,dissected')
+        return (siteContent.sectionOrder || 'documentary,stories,careers,entry-lab,dissected,sponsors')
           .split(',')
           .map((sectionId) => sectionId.trim())
           .filter((sectionId) => !hiddenSections.includes(sectionId))
@@ -291,6 +292,8 @@ export default function Home() {
                 return <EntryLabSection key="entry-lab" />
               case 'dissected':
                 return <DissectedSection key="dissected" />
+              case 'sponsors':
+                return <SponsorsSection key="sponsors" />
               default:
                 return null
             }
