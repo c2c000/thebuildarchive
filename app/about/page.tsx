@@ -408,15 +408,14 @@ export default function AboutPage() {
               {/* Avatar/Image */}
               <div className="flex flex-col items-center md:items-start">
                 <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary">
-                  {siteContent.founderImage ? (
+                  
                     <img
-                      src="/vercel/share/v0-project/components/Screenshot 2026-06-17 at 10.55.10 PM.png"
-                      alt={siteContent.founderName}
+                      src="/SponsorImage.png"
                       className="h-full w-full object-cover"
                     />
-                  ) : (
+                   
                     <User className="h-14 w-14" />
-                  )}
+                  
                 </div>
                 <div className="mt-4 text-center md:text-left">
                   <h3 className="font-serif text-xl font-bold text-foreground">
