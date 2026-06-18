@@ -350,34 +350,43 @@ export default function AboutPage() {
               {/* Avatar/Image */}
               <div className="flex flex-col items-center md:items-start">
                 <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary">
+                {/*
                   {siteContent.founderImage ? (
                     <img
-                      src={siteContent.founderImage}
+                      src="{siteContent.founderImage}"
                       alt={siteContent.founderName}
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <User className="h-14 w-14" />
                   )}
+                  */}
+                    
+                    <img
+                      src="/founderimage.jpg"
+                      className="h-full w-full object-cover"
+                    />
+                   
+                    
                 </div>
                 <div className="mt-4 text-center md:text-left">
                   <h3 className="font-serif text-xl font-bold text-foreground">
-                    {siteContent.founderName}
+                    Cadence Luh
                   </h3>
-                  <p className="text-sm text-primary">{siteContent.founderRole}</p>
+                  <p className="text-sm text-primary">Founder of WGTB</p>
                 </div>
               </div>
 
               {/* Bio and Quote */}
               <div className="md:col-span-2">
                 <p className="leading-relaxed text-muted-foreground">
-                  {siteContent.founderBio}
+                  A student, robotics team member, and aspiring engineer documenting the stories, systems, and barriers that shape who gets to build.
                 </p>
 
                 <div className="mt-8 border-l-4 border-primary pl-6">
                   <Quote className="mb-2 h-6 w-6 text-primary/40" />
                   <p className="font-serif text-lg italic text-foreground">
-                    &ldquo;{siteContent.founderQuote}&rdquo;
+                    &ldquo;I love engineering. But there were moments when I wasn&#39;t sure I belonged in it. This project started as a question about my own experience—and became an exploration of who gets the opportunity to build, create, and stay.&rdquo;
                   </p>
                 </div>
               </div>
