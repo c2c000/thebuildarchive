@@ -410,7 +410,7 @@ export default function AboutPage() {
                 <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary">
                   {siteContent.founderImage ? (
                     <img
-                      src={siteContent.founderImage}
+                      src="/vercel/share/v0-project/components/Screenshot 2026-06-17 at 10.55.10 PM.png"
                       alt={siteContent.founderName}
                       className="h-full w-full object-cover"
                     />
