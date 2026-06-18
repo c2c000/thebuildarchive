@@ -385,7 +385,64 @@ export default function AboutPage() {
           </motion.div>
         </div>
       </section>
+  <section ref={founderRef} className="py-24">
+        <div className="mx-auto max-w-4xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={founderInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+            className="mb-12 text-center"
+          >
+            <h2 className="font-serif text-3xl font-bold text-foreground sm:text-4xl">
+              About Our Partners
+            </h2>
+          </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={founderInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative rounded-3xl border border-border bg-card p-8 sm:p-12"
+          >
+            <div className="grid gap-8 md:grid-cols-3">
+              {/* Avatar/Image */}
+              <div className="flex flex-col items-center md:items-start">
+                <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary">
+                  
+                    <img
+                      src="/SponsorImage.png"
+                      className="h-full w-full object-cover"
+                    />
+                   
+                    <User className="h-14 w-14" />
+                  
+                </div>
+                <div className="mt-4 text-center md:text-left">
+                  <h3 className="font-serif text-xl font-bold text-foreground">
+                    Minorities in STEM
+                  </h3>
+                  <p className="text-sm text-primary">Non-Profit Organization</p>
+                </div>
+              </div>
+
+              {/* Bio and Quote */}
+              <div className="md:col-span-2">
+                <p className="leading-relaxed text-muted-foreground">
+                  We are a community whose mission is to bridge the opportunity gap in STEM.
+
+                </p>
+
+                <div className="mt-8 border-l-4 border-primary pl-6">
+                  <Quote className="mb-2 h-6 w-6 text-primary/40" />
+                  <p className="font-serif text-lg italic text-foreground">
+                    &ldquo;Rooted in Diversity, Growing Through STEM. We're building a future where every voice in STEM is heard, valued, and empowered.&rdquo;
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
       <SectionDivider />
 
       {/* The Unifying Message */}
