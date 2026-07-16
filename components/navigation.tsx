@@ -10,6 +10,7 @@ import { useContent } from '@/lib/content-context'
 const navItems = [
   { href: '/about', label: 'About' },
   { href: '/stories', label: 'Stories' },
+  { href: '/journal', label: 'Journal' },
   { href: '#entry-lab', label: 'Entry Lab' },
   { href: '#careers', label: 'Careers' },
   { href: '#dissected', label: 'Dissected' },

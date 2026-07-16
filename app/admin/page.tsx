@@ -10,6 +10,7 @@ import {
   type Hotspot,
   type LearningStep,
   type ColorScheme,
+  type JournalPost,
 } from '@/lib/content-types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -62,6 +63,8 @@ import {
   Loader2,
   Heart,
   ExternalLink,
+  Newspaper,
+  Calendar,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -247,6 +250,16 @@ function AdminContent() {
   const [thankYouForm, setThankYouForm] = useState({ name: '', note: '' })
   const [editingThankYouId, setEditingThankYouId] = useState<string | null>(null)
 
+  // Journal posts (stored in Supabase)
+  const [journalPosts, setJournalPosts] = useState<JournalPost[]>([])
+  const [loadingJournal, setLoadingJournal] = useState(false)
+  const [editingJournalPost, setEditingJournalPost] = useState<JournalPost | null>(null)
+  const [isAddingJournalPost, setIsAddingJournalPost] = useState(false)
+  const [savingJournal, setSavingJournal] = useState(false)
+  const [updatingJournalId, setUpdatingJournalId] = useState<string | null>(null)
+  const [deletingJournalId, setDeletingJournalId] = useState<string | null>(null)
+  const [confirmDeleteJournalId, setConfirmDeleteJournalId] = useState<string | null>(null)
+
   useEffect(() => {
     setSiteContentForm(siteContent)
   }, [siteContent])
@@ -290,7 +303,87 @@ function AdminContent() {
       loadDbStories()
       loadStoryCounts()
     }
+    if (activeTab === 'journal') {
+      loadJournalPosts()
+    }
   }, [activeTab])
+
+  const loadJournalPosts = async () => {
+    setLoadingJournal(true)
+    try {
+      const response = await fetch('/api/journal?admin=true')
+      const data = await response.json()
+      if (data.posts) {
+        setJournalPosts(data.posts)
+      }
+    } catch (error) {
+      console.error('Failed to load journal posts:', error)
+    } finally {
+      setLoadingJournal(false)
+    }
+  }
+
+  const handleSaveJournalPost = async (
+    data: Pick<JournalPost, 'title' | 'excerpt' | 'content' | 'coverImage' | 'status'>
+  ) => {
+    setSavingJournal(true)
+    try {
+      if (editingJournalPost) {
+        await fetch('/api/journal', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingJournalPost.id, ...data }),
+        })
+      } else {
+        await fetch('/api/journal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        })
+      }
+      setEditingJournalPost(null)
+      setIsAddingJournalPost(false)
+      loadJournalPosts()
+    } catch (error) {
+      console.error('Failed to save journal post:', error)
+    } finally {
+      setSavingJournal(false)
+    }
+  }
+
+  const handleToggleJournalStatus = async (post: JournalPost) => {
+    setUpdatingJournalId(post.id)
+    const newStatus = post.status === 'published' ? 'draft' : 'published'
+    try {
+      await fetch('/api/journal', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: post.id, status: newStatus }),
+      })
+      loadJournalPosts()
+    } catch (error) {
+      console.error('Failed to update journal post:', error)
+    } finally {
+      setUpdatingJournalId(null)
+    }
+  }
+
+  const handleDeleteJournalPost = async (id: string) => {
+    setDeletingJournalId(id)
+    try {
+      await fetch('/api/journal', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      setJournalPosts((prev) => prev.filter((p) => p.id !== id))
+      setConfirmDeleteJournalId(null)
+    } catch (error) {
+      console.error('Failed to delete journal post:', error)
+    } finally {
+      setDeletingJournalId(null)
+    }
+  }
 
   const loadDbStories = async () => {
     setLoadingDbStories(true)
@@ -495,7 +588,7 @@ function AdminContent() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-8 grid w-full grid-cols-3 sm:grid-cols-6 lg:w-[750px]">
+          <TabsList className="mb-8 grid w-full grid-cols-3 sm:grid-cols-4 lg:w-[900px] lg:grid-cols-7">
             <TabsTrigger value="site" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Site Content
@@ -511,6 +604,10 @@ function AdminContent() {
             <TabsTrigger value="modules" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Entry Lab
+            </TabsTrigger>
+            <TabsTrigger value="journal" className="flex items-center gap-2">
+              <Newspaper className="h-4 w-4" />
+              Journal
             </TabsTrigger>
             <TabsTrigger value="sponsors" className="flex items-center gap-2">
               <Heart className="h-4 w-4" />
@@ -1910,6 +2007,415 @@ function AdminContent() {
             </div>
           </TabsContent>
 
+          {/* Journal Tab */}
+          <TabsContent value="journal">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Learning Journal</h2>
+                <p className="text-muted-foreground">
+                  Write weekly posts about what you&apos;re learning. Publish one a week.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={loadJournalPosts} disabled={loadingJournal}>
+                  {loadingJournal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Refresh
+                </Button>
+                <Button onClick={() => setIsAddingJournalPost(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Post
+                </Button>
+              </div>
+            </div>
+
+            {loadingJournal && journalPosts.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : journalPosts.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Newspaper className="mb-4 h-12 w-12 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold">No journal posts yet</h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    Start your weekly learning journal. Try &quot;Why Do Ceramics Break?&quot; or
+                    &quot;Grain Boundaries Explained&quot;.
+                  </p>
+                  <Button onClick={() => setIsAddingJournalPost(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Write your first post
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {journalPosts.map((post) => (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <Card>
+                        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  post.status === 'published'
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-muted text-muted-foreground'
+                                }`}
+                              >
+                                {post.status === 'published' ? 'Published' : 'Draft'}
+                              </span>
+                              {post.publishedAt && (
+                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Calendar className="h-3 w-3" />
+                                  {new Date(post.publishedAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="truncate font-semibold text-foreground">{post.title}</h3>
+                            {post.excerpt && (
+                              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                                {post.excerpt}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            {post.status === 'published' && (
+                              <a
+                                href={`/journal/${post.slug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button variant="ghost" size="icon" title="View post">
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              </a>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleJournalStatus(post)}
+                              disabled={updatingJournalId === post.id}
+                            >
+                              {updatingJournalId === post.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : post.status === 'published' ? (
+                                'Unpublish'
+                              ) : (
+                                'Publish'
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingJournalPost(post)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setConfirmDeleteJournalId(post.id)}
+                              disabled={deletingJournalId === post.id}
+                            >
+                              {deletingJournalId === post.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Sponsors Tab */}
+          <TabsContent value="sponsors">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold">Sponsors &amp; Supporters</h2>
+              <p className="text-muted-foreground">
+                Manage the sponsors and thank-you notes shown in the Sponsors section.
+              </p>
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-2">
+              {/* Sponsors column */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{editingSponsorId ? 'Edit Sponsor' : 'Add Sponsor'}</CardTitle>
+                    <CardDescription>
+                      Organizations or people supporting the project.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Name</label>
+                      <Input
+                        value={sponsorForm.name}
+                        onChange={(e) => setSponsorForm({ ...sponsorForm, name: e.target.value })}
+                        placeholder="e.g., Acme Foundation"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Description</label>
+                      <Textarea
+                        value={sponsorForm.description}
+                        onChange={(e) =>
+                          setSponsorForm({ ...sponsorForm, description: e.target.value })
+                        }
+                        placeholder="A short description of their support..."
+                        rows={2}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Website URL</label>
+                        <Input
+                          value={sponsorForm.url}
+                          onChange={(e) => setSponsorForm({ ...sponsorForm, url: e.target.value })}
+                          placeholder="https://example.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Tier</label>
+                        <Select
+                          value={sponsorForm.tier}
+                          onValueChange={(value) =>
+                            setSponsorForm({
+                              ...sponsorForm,
+                              tier: value as 'platinum' | 'gold' | 'silver' | 'community',
+                            })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="platinum">Platinum</SelectItem>
+                            <SelectItem value="gold">Gold</SelectItem>
+                            <SelectItem value="silver">Silver</SelectItem>
+                            <SelectItem value="community">Community</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          if (!sponsorForm.name.trim()) return
+                          if (editingSponsorId) {
+                            updateSponsor(editingSponsorId, sponsorForm)
+                          } else {
+                            addSponsor(sponsorForm)
+                          }
+                          setSponsorForm({ name: '', description: '', url: '', tier: 'gold' })
+                          setEditingSponsorId(null)
+                        }}
+                      >
+                        {editingSponsorId ? 'Save Changes' : 'Add Sponsor'}
+                      </Button>
+                      {editingSponsorId && (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSponsorForm({ name: '', description: '', url: '', tier: 'gold' })
+                            setEditingSponsorId(null)
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-3">
+                  {sponsors.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No sponsors added yet.</p>
+                  ) : (
+                    sponsors.map((sponsor) => (
+                      <Card key={sponsor.id}>
+                        <CardContent className="flex items-start justify-between gap-3 p-4">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-primary">
+                                {sponsor.tier}
+                              </span>
+                              <h4 className="truncate font-semibold text-foreground">
+                                {sponsor.name}
+                              </h4>
+                            </div>
+                            {sponsor.description && (
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {sponsor.description}
+                              </p>
+                            )}
+                            {sponsor.url && (
+                              <a
+                                href={sponsor.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                {sponsor.url}
+                              </a>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSponsorForm({
+                                  name: sponsor.name,
+                                  description: sponsor.description,
+                                  url: sponsor.url,
+                                  tier: sponsor.tier,
+                                })
+                                setEditingSponsorId(sponsor.id)
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                deleteSponsor(sponsor.id)
+                                if (editingSponsorId === sponsor.id) {
+                                  setEditingSponsorId(null)
+                                  setSponsorForm({ name: '', description: '', url: '', tier: 'gold' })
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Thank Yous column */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{editingThankYouId ? 'Edit Thank You' : 'Add Thank You'}</CardTitle>
+                    <CardDescription>
+                      Shorter notes of gratitude shown below the sponsors.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Name</label>
+                      <Input
+                        value={thankYouForm.name}
+                        onChange={(e) => setThankYouForm({ ...thankYouForm, name: e.target.value })}
+                        placeholder="e.g., Ms. Rodriguez"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Note</label>
+                      <Textarea
+                        value={thankYouForm.note}
+                        onChange={(e) => setThankYouForm({ ...thankYouForm, note: e.target.value })}
+                        placeholder="What are you thanking them for?"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          if (!thankYouForm.name.trim()) return
+                          if (editingThankYouId) {
+                            updateThankYou(editingThankYouId, thankYouForm)
+                          } else {
+                            addThankYou(thankYouForm)
+                          }
+                          setThankYouForm({ name: '', note: '' })
+                          setEditingThankYouId(null)
+                        }}
+                      >
+                        {editingThankYouId ? 'Save Changes' : 'Add Thank You'}
+                      </Button>
+                      {editingThankYouId && (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setThankYouForm({ name: '', note: '' })
+                            setEditingThankYouId(null)
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-3">
+                  {thankYous.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No thank-you notes added yet.</p>
+                  ) : (
+                    thankYous.map((thankYou) => (
+                      <Card key={thankYou.id}>
+                        <CardContent className="flex items-start justify-between gap-3 p-4">
+                          <div className="min-w-0">
+                            <h4 className="truncate font-semibold text-foreground">
+                              {thankYou.name}
+                            </h4>
+                            {thankYou.note && (
+                              <p className="mt-1 text-sm text-muted-foreground">{thankYou.note}</p>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setThankYouForm({ name: thankYou.name, note: thankYou.note })
+                                setEditingThankYouId(thankYou.id)
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                deleteThankYou(thankYou.id)
+                                if (editingThankYouId === thankYou.id) {
+                                  setEditingThankYouId(null)
+                                  setThankYouForm({ name: '', note: '' })
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
           {/* Subscribers Tab */}
           <TabsContent value="subscribers">
             <div className="mb-6 flex items-center justify-between">
@@ -2055,6 +2561,41 @@ function AdminContent() {
           setIsAddingModule(false)
         }}
       />
+
+      {/* Journal Post Dialog */}
+      <JournalDialog
+        post={editingJournalPost}
+        isOpen={!!editingJournalPost || isAddingJournalPost}
+        saving={savingJournal}
+        onClose={() => {
+          setEditingJournalPost(null)
+          setIsAddingJournalPost(false)
+        }}
+        onSave={handleSaveJournalPost}
+      />
+
+      {/* Journal Delete Confirmation */}
+      <AlertDialog
+        open={!!confirmDeleteJournalId}
+        onOpenChange={(open) => !open && setConfirmDeleteJournalId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this journal post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the post. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDeleteJournalId && handleDeleteJournalPost(confirmDeleteJournalId)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Reset Confirmation */}
       <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
@@ -2622,6 +3163,139 @@ function ModuleDialog({
           </Button>
           <Button onClick={() => onSave(form)}>
             {module ? 'Save Changes' : 'Add Module'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Journal Post Dialog Component
+function JournalDialog({
+  post,
+  isOpen,
+  saving,
+  onClose,
+  onSave,
+}: {
+  post: JournalPost | null
+  isOpen: boolean
+  saving: boolean
+  onClose: () => void
+  onSave: (
+    data: Pick<JournalPost, 'title' | 'excerpt' | 'content' | 'coverImage' | 'status'>
+  ) => void
+}) {
+  const [form, setForm] = useState({
+    title: '',
+    excerpt: '',
+    content: '',
+    coverImage: '',
+    status: 'draft' as 'draft' | 'published',
+  })
+
+  useEffect(() => {
+    if (post) {
+      setForm({
+        title: post.title,
+        excerpt: post.excerpt,
+        content: post.content,
+        coverImage: post.coverImage,
+        status: post.status,
+      })
+    } else {
+      setForm({ title: '', excerpt: '', content: '', coverImage: '', status: 'draft' })
+    }
+  }, [post, isOpen])
+
+  const canSave = form.title.trim().length > 0 && form.content.trim().length > 0
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{post ? 'Edit Post' : 'New Journal Post'}</DialogTitle>
+          <DialogDescription>
+            {post
+              ? 'Update this journal entry.'
+              : 'Write a new entry for your weekly learning journal.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 py-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Title</label>
+            <Input
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="e.g., Why Do Ceramics Break?"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Excerpt <span className="text-muted-foreground">(short summary)</span>
+            </label>
+            <Textarea
+              value={form.excerpt}
+              onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
+              placeholder="A one or two sentence preview shown on the journal list..."
+              rows={2}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Cover Image URL <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <Input
+              value={form.coverImage}
+              onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
+              placeholder="https://... or /images/my-photo.jpg"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Content</label>
+            <Textarea
+              value={form.content}
+              onChange={(e) => setForm({ ...form, content: e.target.value })}
+              placeholder="Write your post here. Separate paragraphs with a blank line."
+              rows={14}
+            />
+            <p className="text-xs text-muted-foreground">
+              Tip: leave a blank line between paragraphs to break up the text.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Status</label>
+            <Select
+              value={form.status}
+              onValueChange={(value) =>
+                setForm({ ...form, status: value as 'draft' | 'published' })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Draft (only you can see it)</SelectItem>
+                <SelectItem value="published">Published (live on the site)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={() => onSave(form)} disabled={!canSave || saving}>
+            {saving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            {post ? 'Save Changes' : 'Create Post'}
           </Button>
         </DialogFooter>
       </DialogContent>
