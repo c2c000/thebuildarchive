@@ -81,6 +81,19 @@ export interface ThankYou {
   note: string
 }
 
+export interface JournalPost {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  content: string
+  coverImage: string
+  status: 'draft' | 'published'
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 // Color scheme presets
 export type ColorScheme = 'default' | 'forest' | 'ocean' | 'sunset' | 'lavender' | 'monochrome'
 
