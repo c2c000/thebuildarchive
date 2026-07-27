@@ -15,6 +15,7 @@ const navItems = [
   { href: '#careers', label: 'Careers' },
   { href: '#dissected', label: 'Dissected' },
   { href: '#documentary', label: 'Documentary' },
+  { href: '#sponsors', label: 'Sponsors' },
 ]
 
 export function Navigation() {

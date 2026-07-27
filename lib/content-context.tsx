@@ -140,25 +140,24 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const loadedSponsors = localStorage.getItem(STORAGE_KEYS.sponsors)
-    if (loadedSponsors) {
-      try {
-        setSponsors(JSON.parse(loadedSponsors))
-      } catch (e) {
-        console.error('Failed to parse sponsors from localStorage')
-      }
-    }
-
-    const loadedThankYous = localStorage.getItem(STORAGE_KEYS.thankYous)
-    if (loadedThankYous) {
-      try {
-        setThankYous(JSON.parse(loadedThankYous))
-      } catch (e) {
-        console.error('Failed to parse thank yous from localStorage')
-      }
-    }
-
     setIsHydrated(true)
+  }, [])
+
+  // Sponsors and thank-yous are stored in the database so they persist across
+  // devices and appear for all visitors on the live site.
+  const loadSponsorsAndThankYous = async () => {
+    try {
+      const res = await fetch('/api/sponsors')
+      const data = await res.json()
+      if (Array.isArray(data.sponsors)) setSponsors(data.sponsors)
+      if (Array.isArray(data.thankYous)) setThankYous(data.thankYous)
+    } catch (e) {
+      console.error('Failed to load sponsors from database', e)
+    }
+  }
+
+  useEffect(() => {
+    loadSponsorsAndThankYous()
   }, [])
 
   // Save to localStorage whenever data changes (after hydration)
@@ -191,18 +190,6 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.siteContent, JSON.stringify(siteContent))
     }
   }, [siteContent, isHydrated])
-
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem(STORAGE_KEYS.sponsors, JSON.stringify(sponsors))
-    }
-  }, [sponsors, isHydrated])
-
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem(STORAGE_KEYS.thankYous, JSON.stringify(thankYous))
-    }
-  }, [thankYous, isHydrated])
 
   // Story CRUD
   const addStory = (story: Omit<Story, 'id'>) => {
@@ -286,34 +273,96 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setDiscussionPosts((prev) => prev.filter((post) => post.id !== id))
   }
 
-  // Sponsor CRUD
-  const addSponsor = (sponsor: Omit<Sponsor, 'id'>) => {
-    setSponsors((prev) => [...prev, { ...sponsor, id: generateId() }])
+  // Sponsor CRUD (persisted in the database via /api/sponsors)
+  const addSponsor = async (sponsor: Omit<Sponsor, 'id'>) => {
+    try {
+      const res = await fetch('/api/sponsors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'sponsor', ...sponsor }),
+      })
+      const data = await res.json()
+      if (data.sponsor) {
+        setSponsors((prev) => [...prev, data.sponsor])
+      }
+    } catch (e) {
+      console.error('Failed to add sponsor', e)
+    }
   }
 
-  const updateSponsor = (id: string, updates: Partial<Sponsor>) => {
-    setSponsors((prev) =>
-      prev.map((sponsor) => (sponsor.id === id ? { ...sponsor, ...updates } : sponsor))
-    )
+  const updateSponsor = async (id: string, updates: Partial<Sponsor>) => {
+    try {
+      const res = await fetch('/api/sponsors', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'sponsor', id, ...updates }),
+      })
+      const data = await res.json()
+      if (data.sponsor) {
+        setSponsors((prev) => prev.map((s) => (s.id === id ? data.sponsor : s)))
+      }
+    } catch (e) {
+      console.error('Failed to update sponsor', e)
+    }
   }
 
-  const deleteSponsor = (id: string) => {
+  const deleteSponsor = async (id: string) => {
     setSponsors((prev) => prev.filter((sponsor) => sponsor.id !== id))
+    try {
+      await fetch('/api/sponsors', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'sponsor', id }),
+      })
+    } catch (e) {
+      console.error('Failed to delete sponsor', e)
+    }
   }
 
-  // Thank You CRUD
-  const addThankYou = (thankYou: Omit<ThankYou, 'id'>) => {
-    setThankYous((prev) => [...prev, { ...thankYou, id: generateId() }])
+  // Thank You CRUD (persisted in the database via /api/sponsors)
+  const addThankYou = async (thankYou: Omit<ThankYou, 'id'>) => {
+    try {
+      const res = await fetch('/api/sponsors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'thankYou', ...thankYou }),
+      })
+      const data = await res.json()
+      if (data.thankYou) {
+        setThankYous((prev) => [...prev, data.thankYou])
+      }
+    } catch (e) {
+      console.error('Failed to add thank you', e)
+    }
   }
 
-  const updateThankYou = (id: string, updates: Partial<ThankYou>) => {
-    setThankYous((prev) =>
-      prev.map((ty) => (ty.id === id ? { ...ty, ...updates } : ty))
-    )
+  const updateThankYou = async (id: string, updates: Partial<ThankYou>) => {
+    try {
+      const res = await fetch('/api/sponsors', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'thankYou', id, ...updates }),
+      })
+      const data = await res.json()
+      if (data.thankYou) {
+        setThankYous((prev) => prev.map((ty) => (ty.id === id ? data.thankYou : ty)))
+      }
+    } catch (e) {
+      console.error('Failed to update thank you', e)
+    }
   }
 
-  const deleteThankYou = (id: string) => {
+  const deleteThankYou = async (id: string) => {
     setThankYous((prev) => prev.filter((ty) => ty.id !== id))
+    try {
+      await fetch('/api/sponsors', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'thankYou', id }),
+      })
+    } catch (e) {
+      console.error('Failed to delete thank you', e)
+    }
   }
 
   // Site Content
@@ -328,15 +377,12 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setLearningModules(defaultLearningModules)
     setDiscussionPosts(defaultDiscussionPosts)
     setSiteContent(defaultSiteContent)
-    setSponsors(defaultSponsors)
-    setThankYous(defaultThankYous)
     localStorage.removeItem(STORAGE_KEYS.stories)
     localStorage.removeItem(STORAGE_KEYS.dissectedObjects)
     localStorage.removeItem(STORAGE_KEYS.learningModules)
     localStorage.removeItem(STORAGE_KEYS.discussionPosts)
     localStorage.removeItem(STORAGE_KEYS.siteContent)
-    localStorage.removeItem(STORAGE_KEYS.sponsors)
-    localStorage.removeItem(STORAGE_KEYS.thankYous)
+    // Sponsors and thank-yous live in the database, so leave them intact.
   }
 
   const exportData = () => {
