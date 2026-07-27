@@ -15,7 +15,7 @@ import { StayUpdatedSection } from '@/components/stay-updated-section'
 import { Footer } from '@/components/footer'
 import { ScrollToExplore } from '@/components/scroll-to-explore'
 import { useContent } from '@/lib/content-context'
-import { ArrowRight, Play, Users, Briefcase, Cpu, Layers } from 'lucide-react'
+import { ArrowRight, Play, Users, Briefcase, Cpu, Layers, Newspaper } from 'lucide-react'
 import { StoryArchiveCurated } from '@/components/story-archive-curated'
 
 const sectionIcons = {
@@ -24,6 +24,7 @@ const sectionIcons = {
   careers: Briefcase,
   entryLab: Cpu,
   dissected: Layers,
+  journal: Newspaper,
 }
 
 export default function Home() {
@@ -70,6 +71,14 @@ export default function Home() {
       description: siteContent.careersDescription,
       icon: sectionIcons.careers,
       color: 'bg-chart-3',
+    },
+    {
+      href: '/journal',
+      title: 'Learning Journal',
+      subtitle: 'Weekly Notes',
+      description: "One post a week on what I'm learning, from grain boundaries to why ceramics break.",
+      icon: sectionIcons.journal,
+      color: 'bg-chart-2',
     },
   ]
 
